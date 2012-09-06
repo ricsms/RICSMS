@@ -60,7 +60,7 @@ INSTALLED_BACKENDS = {
         "sendsms_params": {"smsc": "FAKE",
                            "from": "123", # not set automatically by SMSC
                            "username": "rapidsms",
-                           "password": "93.westbrook"}, # or set in localsettings.py
+                           "password": "ricsms.2012"}, # or set in localsettings.py
         "coding": 0,
         "charset": "ascii",
         "encode_errors": "ignore", # strip out unknown (unicode) characters
@@ -73,7 +73,7 @@ INSTALLED_BACKENDS = {
         "sendsms_params": {"smsc": "usb0-modem",
                            "from": "+SIMphonenumber", # not set automatically by SMSC
                            "username": "rapidsms",
-                           "password": "93.westbrook"}, # or set in localsettings.py
+                           "password": "ricsms.2012"}, # or set in localsettings.py
         "coding": 0,
         "charset": "ascii",
         "encode_errors": "ignore", # strip out unknown (unicode) characters
