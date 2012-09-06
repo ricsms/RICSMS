@@ -1,0 +1,98 @@
+import rapidsms
+import re
+from models import *
+from datetime import datetime
+
+
+class App(rapidsms.apps.base.AppBase):
+
+    def start (self):
+        """Configure your app in the start phase."""
+        pass
+
+    def parse (self, message):
+        """Parse and annotate messages in the parse phase."""
+        pass
+
+    def handle (self, message):
+		debug=True
+
+		# Get the connection to the database
+		reporter = message.connection.identity
+
+		# Check if the participant already exists
+		mobileNumber = message.peer;
+		participantChk = Participant.objects.filter(mobileNumber=mobileNumber)
+		
+		if participantChk: 
+			# Participant exists. Store their current answer and send the next question. 
+			participant = participantChk[0]
+			if (debug):
+				message.respond("Participant " + mobileNumber + " exists. ID: " + str(participant.id))
+		else:
+			# New Participant. Get survey from text and make sure it exists. 			
+			surveyCode = message.text
+			surveyChk = Survey.objects.filter(responseCode=surveyCode)
+			
+			if (surveyChk):
+				survey = surveyChk[0]
+				# For now set language statically
+				lang = Language.objects.filter(id=1)[0]
+
+				# Display Welcome message if it exists 
+				surveyLang = SurveyLang.objects.filter(survey=survey, lang=lang)[0]
+				welcomeMsg = surveyLang.welcomeMsg
+				if (welcomeMsg):
+					message.respond(surveyLang.welcomeMsg)
+
+				participant = Participant(
+					mobileNumber = message.peer,
+					survey = survey,
+					lang = lang)
+				participant.save()
+
+				if (debug):
+					message.respond("New Participant. Creating new entry with surveyId: " + str(survey.id))
+
+				# Check if we need to send the survey selection question
+				availableLangs = SurveyAvailableLang.objects.filter(survey=survey)
+				if (availableLangs):
+					if(len(availableLangs) > 1):
+						# User has to send back language selection
+						langStr = ""
+						for lng in availableLangs:
+							langStr += "(" + lng.responseCode + ") : " + lng.lang.name + " "
+						message.respond(langStr)
+
+						# Record the outgoing message. Note we are expecting a response to the lang question
+						ParticipantRecord(
+							participant = participant,
+							survey = survey,
+							sentTime = datetime.now(),
+							langQuestion = True).save()
+					else: 
+						participant.lang = availableLangs[0].lang
+						participant.save()
+							
+
+			else:
+				# If the survey doesn't exists then we return
+				if (debug):
+					message.respond("Participant not found. No valid survey passed")			
+				return True
+
+
+		return True
+    
+    def cleanup (self, message):
+        """Perform any clean up after all handlers have run in the
+           cleanup phase."""
+        pass
+
+    def outgoing (self, message):
+        """Handle outgoing message notifications."""
+        pass
+
+    def stop (self):
+        """Perform global app cleanup when the application is stopped."""
+        pass
